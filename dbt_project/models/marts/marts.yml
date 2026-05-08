@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: dim_pokemon
+    description: >
+      Canonical Pokémon dimension table. One row per Pokémon.
+      Use this as the primary entity table for all Pokémon-level analysis.
+    columns:
+      - name: pokemon_id
+        tests:
+          - not_null
+          - unique
+      - name: pokemon_name
+        tests:
+          - not_null
+          - unique
+      - name: primary_type
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - normal
+                - fire
+                - water
+                - electric
+                - grass
+                - ice
+                - fighting
+                - poison
+                - ground
+                - flying
+                - psychic
+                - bug
+                - rock
+                - ghost
+                - dragon
+                - dark
+                - steel
+                - fairy
+      - name: height_m
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 20
+      - name: weight_kg
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1000
+
+  - name: fct_pokemon_stats
+    description: One row per Pokémon per stat category.
+    columns:
+      - name: pokemon_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_pokemon')
+              field: pokemon_id
+      - name: stat_name
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["hp", "attack", "defense", "special-attack", "special-defense", "speed"]
+      - name: base_stat
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 255    # Maximum possible base stat in Pokémon games

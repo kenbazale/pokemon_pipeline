@@ -1,0 +1,14 @@
+[runtime]
+log_level = "INFO"           # Use "DEBUG" when diagnosing issues
+log_format = "{asctime} | {levelname} | {name} | {message}"  # Brace-style format required by Python 3.14 logging validation.
+
+[pipeline]
+pipeline_name = "pokemon_pipeline"
+dataset_name  = "pokemon_raw"     # This becomes the DuckDB schema name
+dev_mode      = false             # CRITICAL: False means state is preserved between runs.
+                                  # True disables incremental state — only for debugging.
+
+[sources.pokemon_api]
+base_url        = "https://pokeapi.co/api/v2"
+request_timeout = 30              # Seconds before giving up on an HTTP request
+max_retries     = 3               # dlt's built-in retry count for transient errors

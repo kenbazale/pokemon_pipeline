@@ -1,0 +1,56 @@
+# This file tells dbt where the raw tables live.
+# The 'identifier' field maps to the actual table name in DuckDB.
+# Using sources (not direct table references) enables:
+#   - Source freshness checks (dbt source freshness)
+#   - Lineage tracking in dbt docs
+#   - Easy schema changes in one place
+
+version: 2
+
+sources:
+  - name: pokemon_raw
+    schema: pokemon_raw               # The DuckDB schema name
+    description: >
+      Raw Pokémon data loaded by dlt from the PokéAPI.
+      Do not query these tables directly in marts — always go through staging.
+
+    # Freshness check: alert if data is older than 25 hours
+    freshness:
+      warn_after: {count: 25, period: hour}
+      error_after: {count: 49, period: hour}
+    loaded_at_field: _loaded_at       # dlt's audit column
+
+    tables:
+      - name: pokemon_detail
+        identifier: pokemon_detail
+        description: One row per Pokémon. Height in dm, weight in hg (raw from API).
+        columns:
+          - name: id
+            description: PokéAPI numeric ID. Unique per Pokémon.
+            tests:
+              - not_null
+              - unique
+
+      - name: pokemon_detail__abilities
+        identifier: pokemon_detail__abilities
+        description: >
+          Child table created by dlt from the abilities array.
+          Foreign key: _dlt_parent_id references pokemon_detail._dlt_id
+
+      - name: pokemon_detail__types
+        identifier: pokemon_detail__types
+        description: Child table from types array.
+
+      - name: pokemon_detail__stats
+        identifier: pokemon_detail__stats
+        description: Child table from stats array.
+
+      - name: pokemon_index
+        identifier: pokemon_index
+        description: Reference table of all Pokémon names and API URLs.
+
+      - name: _dlt_loads
+        identifier: _dlt_loads
+        description: >
+          dlt audit table. One row per pipeline run.
+          Join to pokemon_detail._loaded_at to trace any row back to its load run.

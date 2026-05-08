@@ -1,0 +1,19 @@
+# This file defines the database connection.
+# For production, use environment variables (env_var()) — never hardcode creds.
+
+dbt_project:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../pokemon.duckdb') }}"
+      threads: 4
+
+    prod:
+      type: bigquery
+      method:      service-account
+      project:     "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset:     pokemon_marts
+      keyfile:     "{{ env_var('GCP_KEYFILE_PATH') }}"
+      threads:     8
+      timeout_seconds: 300

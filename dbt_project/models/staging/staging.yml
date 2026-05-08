@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: stg_pokemon
+    description: Cleaned Pokémon master records. One row per Pokémon.
+    columns:
+      - name: pokemon_id
+        description: Numeric PokéAPI ID.
+        tests:
+          - not_null
+          - unique
+
+      - name: pokemon_name
+        description: Lowercase Pokémon name.
+        tests:
+          - not_null
+          # dbt-expectations: name must match pattern (no numbers, no spaces)
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: "^[a-z][a-z0-9\\-]*$"
+
+      - name: height_m
+        description: Height in metres.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0.1
+              max_value: 20.0
+
+      - name: weight_kg
+        description: Weight in kilograms.
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0.1
+              max_value: 1000.0
+
+      - name: dlt_load_id
+        description: Foreign key to _dlt_loads table.
+        tests:
+          - not_null
+
+  - name: stg_pokemon_abilities
+    description: One row per Pokémon-ability combination.
+    columns:
+      - name: pokemon_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_pokemon')
+              field: pokemon_id
+
+      - name: ability_name
+        tests:
+          - not_null
+
+  - name: stg_pokemon_types
+    description: One row per Pokémon-type slot.
+    columns:
+      - name: pokemon_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_pokemon')
+              field: pokemon_id
+
+      - name: type_slot
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2]   # PokéAPI only allows primary and secondary types
